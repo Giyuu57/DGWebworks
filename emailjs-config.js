@@ -2,9 +2,9 @@
 // Replace these with your actual EmailJS keys
 
 const EMAILJS_CONFIG = {
-    publicKey: 'YOUR_PUBLIC_KEY',     // From EmailJS Account -> API Keys
-    serviceId: 'YOUR_SERVICE_ID',     // From your Gmail service  
-    templateId: 'YOUR_TEMPLATE_ID'    // From your email template
+    publicKey: 'M8mHzPyM_hiH1Ud6_',     // From EmailJS Account -> API Keys
+    serviceId: 'service_t8m0x6q',     // From your Gmail service  
+    templateId: 'template_zssqzhw'    // From your email template
 };
 
 // Don't change anything below this line
