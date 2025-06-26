@@ -1,6 +1,17 @@
-// D&G Webworks Lead Generation Website - Interactive Script
+// D&G Webworks Lead Generation Website - Enhanced Interactive Script
 (function() {
     'use strict';
+
+    // Rate limiting for form submissions
+    let lastSubmissionTime = 0;
+    const SUBMISSION_COOLDOWN = 30000; // 30 seconds between submissions
+
+    // Form validation patterns
+    const validationPatterns = {
+        email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+        name: /^[a-zA-Z\s]{2,100}$/,
+        company: /^[a-zA-Z0-9\s\-.,&']{0,100}$/
+    };
 
     // Wait for DOM to be fully loaded
     document.addEventListener('DOMContentLoaded', function() {
@@ -8,6 +19,8 @@
     });
 
     function initializeWebsite() {
+        console.log('🚀 D&G Webworks - Initializing website...');
+        
         // Remove loading state
         removeLoadingState();
         
@@ -28,6 +41,8 @@
         
         // Initialize header scroll effects
         initHeaderScrollEffects();
+
+        console.log('✅ D&G Webworks - Website initialized successfully');
     }
 
     // Remove loading state and show content
@@ -45,7 +60,10 @@
 
     // Initialize scroll-triggered animations
     function initScrollAnimations() {
-        if (!('IntersectionObserver' in window)) return;
+        if (!('IntersectionObserver' in window)) {
+            console.warn('IntersectionObserver not supported');
+            return;
+        }
 
         const observerOptions = {
             threshold: 0.1,
@@ -238,194 +256,15 @@
         }
     };
 
-    // Initialize EmailJS
-    function initEmailJS() {
-        // Check if emailjs is loaded
-        if (typeof emailjs === 'undefined') {
-            console.error('EmailJS library not loaded. Please check your internet connection.');
-            return false;
-        }
-        
-        // Check if config is loaded
-        if (typeof window.EMAILJS_CONFIG === 'undefined') {
-            console.error('EmailJS config not loaded. Please check emailjs-config.js file.');
-            return false;
-        }
-        
-        // Initialize EmailJS with your public key
-        try {
-            emailjs.init(window.EMAILJS_CONFIG.publicKey);
-            console.log('EmailJS initialized successfully');
-            return true;
-        } catch (error) {
-            console.error('Failed to initialize EmailJS:', error);
-            return false;
-        }
-    }
-
-    // Initialize form handling with EmailJS
-    function initFormHandling() {
-        // Initialize EmailJS
-        const emailJSReady = initEmailJS();
-        
-        const contactForm = document.getElementById('contact-form');
-        
-        if (contactForm) {
-            contactForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                // Check if EmailJS is ready
-                if (!emailJSReady) {
-                    showNotification('Setup Required', 'EmailJS is not properly configured. Please check your keys in script.js', 'error');
-                    return;
-                }
-                
-                // Show loading state
-                const submitButton = this.querySelector('button[type="submit"]');
-                const originalText = submitButton.textContent;
-                submitButton.textContent = 'Sending...';
-                submitButton.disabled = true;
-                
-                // Get form data
-                const formData = new FormData(this);
-                const templateParams = {
-                    from_name: formData.get('name'),
-                    from_email: formData.get('email'), 
-                    company: formData.get('company') || 'Not provided',
-                    service: formData.get('service') || 'Not specified',
-                    message: formData.get('message') || 'No additional requirements'
-                };
-                
-                console.log('Sending email with params:', templateParams);
-                
-                // Get configuration
-                const config = window.EMAILJS_CONFIG;
-                
-                // Check for placeholder values
-                if (config.serviceId === 'YOUR_SERVICE_ID' || config.templateId === 'YOUR_TEMPLATE_ID' || config.publicKey === 'YOUR_PUBLIC_KEY') {
-                    console.error('EmailJS keys not updated! Please update emailjs-config.js with your actual keys.');
-                    showNotification('Setup Required', 'Please update your EmailJS keys in emailjs-config.js file', 'error');
-                    submitButton.textContent = originalText;
-                    submitButton.disabled = false;
-                    return;
-                }
-                
-                // Send email using EmailJS
-                emailjs.send(config.serviceId, config.templateId, templateParams)
-                    .then(function(response) {
-                        console.log('Email sent successfully!', response.status, response.text);
-                        
-                        // Show success message
-                        showNotification('Message Sent!', 'Thank you for your interest! We will contact you within 2 hours.', 'success');
-                        
-                        // Reset form
-                        contactForm.reset();
-                        
-                    }, function(error) {
-                        console.error('Failed to send email:', error);
-                        
-                        let errorMessage = 'There was an error sending your message. ';
-                        
-                        if (error.status === 400) {
-                            errorMessage += 'Please check your EmailJS template parameters.';
-                        } else if (error.status === 401) {
-                            errorMessage += 'Please check your EmailJS public key.';
-                        } else if (error.status === 404) {
-                            errorMessage += 'Please check your service ID and template ID.';
-                        } else {
-                            errorMessage += 'Please try again or contact us directly.';
-                        }
-                        
-                        showNotification('Send Failed', errorMessage, 'error');
-                    })
-                    .finally(function() {
-                        // Reset button state
-                        submitButton.textContent = originalText;
-                        submitButton.disabled = false;
-                    });
-            });
-
-            // Add real-time validation
-            const inputs = contactForm.querySelectorAll('input, select, textarea');
-            inputs.forEach(input => {
-                input.addEventListener('blur', function() {
-                    validateField(this);
-                });
-
-                input.addEventListener('input', function() {
-                    clearFieldError(this);
-                });
-            });
-        }
-    }
-
-    // Field validation
-    function validateField(field) {
-        const value = field.value.trim();
-        let isValid = true;
-        let message = '';
-
-        // Clear previous errors
-        clearFieldError(field);
-
-        // Required field validation
-        if (field.hasAttribute('required') && !value) {
-            isValid = false;
-            message = 'This field is required';
-        }
-
-        // Email validation
-        if (field.type === 'email' && value) {
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(value)) {
-                isValid = false;
-                message = 'Please enter a valid email address';
-            }
-        }
-
-        if (!isValid) {
-            showFieldError(field, message);
-        }
-
-        return isValid;
-    }
-
-    function showFieldError(field, message) {
-        const formGroup = field.closest('.form-group');
-        if (formGroup) {
-            field.style.borderColor = '#ef4444';
-            
-            let errorElement = formGroup.querySelector('.field-error');
-            if (!errorElement) {
-                errorElement = document.createElement('span');
-                errorElement.className = 'field-error';
-                errorElement.style.cssText = 'color: #ef4444; font-size: 14px; margin-top: 4px; display: block;';
-                formGroup.appendChild(errorElement);
-            }
-            errorElement.textContent = message;
-        }
-    }
-
-    function clearFieldError(field) {
-        const formGroup = field.closest('.form-group');
-        if (formGroup) {
-            field.style.borderColor = '';
-            const errorElement = formGroup.querySelector('.field-error');
-            if (errorElement) {
-                errorElement.remove();
-            }
-        }
-    }
-
     // Initialize header scroll effects
     function initHeaderScrollEffects() {
         const header = document.getElementById('header');
-        let lastScrollY = window.pageYOffset;
+        let lastScrollY = window.scrollY;
 
-        function updateHeader() {
-            const currentScrollY = window.pageYOffset;
+        function handleScroll() {
+            const currentScrollY = window.scrollY;
             
-            if (currentScrollY > 100) {
+            if (currentScrollY > 10) {
                 header.classList.add('scrolled');
             } else {
                 header.classList.remove('scrolled');
@@ -434,207 +273,412 @@
             lastScrollY = currentScrollY;
         }
 
-        window.addEventListener('scroll', debounce(updateHeader, 10), { passive: true });
+        window.addEventListener('scroll', handleScroll, { passive: true });
     }
 
-    // Notification system
-    function showNotification(title, message, type = 'info') {
-        // Remove existing notification
-        const existingNotification = document.querySelector('.notification');
-        if (existingNotification) {
-            existingNotification.remove();
+    // Initialize EmailJS
+    function initEmailJS() {
+        console.log('🔧 Initializing EmailJS...');
+        
+        // Check if emailjs is loaded
+        if (typeof emailjs === 'undefined') {
+            console.error('❌ EmailJS library not loaded. Please check your internet connection.');
+            return false;
+        }
+        
+        // Check if config is loaded
+        if (typeof window.EMAILJS_CONFIG === 'undefined') {
+            console.error('❌ EmailJS config not loaded. Please check emailjs-config.js file.');
+            return false;
+        }
+        
+        // Validate configuration
+        const config = window.EMAILJS_CONFIG;
+        if (!config.publicKey || !config.serviceId || !config.templateId) {
+            console.error('❌ EmailJS configuration incomplete. Missing required keys.');
+            return false;
         }
 
-        // Create notification element
-        const notification = document.createElement('div');
-        notification.className = `notification notification-${type}`;
-        notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: white;
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius);
-            padding: 16px 20px;
-            box-shadow: var(--shadow-lg);
-            z-index: 10000;
-            max-width: 400px;
-            transform: translateX(100%);
-            transition: transform 0.3s ease-out;
-        `;
+        if (config.publicKey === 'YOUR_PUBLIC_KEY' || 
+            config.serviceId === 'YOUR_SERVICE_ID' || 
+            config.templateId === 'YOUR_TEMPLATE_ID') {
+            console.error('❌ EmailJS configuration contains placeholder values. Please update with actual keys.');
+            return false;
+        }
+        
+        // Initialize EmailJS with your public key
+        try {
+            emailjs.init(config.publicKey);
+            console.log('✅ EmailJS initialized successfully');
+            console.log('📧 Service ID:', config.serviceId);
+            console.log('📄 Template ID:', config.templateId);
+            return true;
+        } catch (error) {
+            console.error('❌ Failed to initialize EmailJS:', error);
+            return false;
+        }
+    }
 
-        if (type === 'success') {
-            notification.style.borderLeftColor = 'var(--primary-500)';
-            notification.style.borderLeftWidth = '4px';
-        } else if (type === 'error') {
-            notification.style.borderLeftColor = '#ef4444';
-            notification.style.borderLeftWidth = '4px';
+    // Form validation functions
+    function validateField(field, value, type) {
+        const errors = [];
+
+        // Required field validation
+        if (field.hasAttribute('required') && (!value || value.trim() === '')) {
+            errors.push(`${getFieldLabel(field)} is required`);
+            return errors;
         }
 
-        notification.innerHTML = `
-            <div style="display: flex; align-items: flex-start; gap: 12px;">
-                <div style="flex: 1;">
-                    <h4 style="margin: 0 0 4px 0; font-weight: 600; color: var(--text-primary);">${title}</h4>
-                    <p style="margin: 0; color: var(--text-secondary); font-size: 14px;">${message}</p>
-                </div>
-                <button onclick="this.parentElement.parentElement.remove()" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 18px; line-height: 1;">×</button>
-            </div>
-        `;
+        // Skip other validations if field is empty and not required
+        if (!value || value.trim() === '') {
+            return errors;
+        }
 
-        document.body.appendChild(notification);
+        // Type-specific validation
+        switch (type) {
+            case 'email':
+                if (!validationPatterns.email.test(value)) {
+                    errors.push('Please enter a valid email address');
+                }
+                break;
+            case 'name':
+                if (!validationPatterns.name.test(value)) {
+                    errors.push('Name should only contain letters and spaces (2-100 characters)');
+                }
+                break;
+            case 'company':
+                if (value && !validationPatterns.company.test(value)) {
+                    errors.push('Company name contains invalid characters');
+                }
+                break;
+            case 'message':
+                if (value.length > 1000) {
+                    errors.push('Message should not exceed 1000 characters');
+                }
+                break;
+        }
 
-        // Animate in
-        setTimeout(() => {
-            notification.style.transform = 'translateX(0)';
-        }, 10);
+        return errors;
+    }
 
-        // Auto remove after 5 seconds
-        setTimeout(() => {
-            if (notification.parentElement) {
-                notification.style.transform = 'translateX(100%)';
-                setTimeout(() => {
-                    if (notification.parentElement) {
-                        notification.remove();
-                    }
-                }, 300);
+    function getFieldLabel(field) {
+        const label = field.closest('.form-group').querySelector('label');
+        return label ? label.textContent.replace(' *', '') : field.name;
+    }
+
+    function showFieldError(field, errors) {
+        const errorElement = document.getElementById(`${field.name}-error`);
+        if (errorElement) {
+            if (errors.length > 0) {
+                errorElement.textContent = errors[0];
+                errorElement.classList.add('show');
+                field.classList.add('error');
+                return false;
+            } else {
+                errorElement.textContent = '';
+                errorElement.classList.remove('show');
+                field.classList.remove('error');
+                return true;
             }
-        }, 5000);
-    }
-
-    // Utility function: Debounce
-    function debounce(func, wait) {
-        let timeout;
-        return function executedFunction(...args) {
-            const later = () => {
-                clearTimeout(timeout);
-                func.apply(this, args);
-            };
-            clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
-        };
-    }
-
-    // Add keyboard navigation support
-    document.addEventListener('keydown', function(e) {
-        // Add keyboard shortcuts
-        if (e.ctrlKey || e.metaKey) {
-            switch (e.key) {
-                case 'k':
-                    e.preventDefault();
-                    // Focus on first contact button
-                    const contactButton = document.querySelector('.btn-primary');
-                    if (contactButton) contactButton.focus();
-                    break;
-            }
         }
+        return errors.length === 0;
+    }
 
-        // Escape key to close mobile menu
-        if (e.key === 'Escape') {
-            const mobileMenu = document.getElementById('mobile-menu');
-            const hamburger = document.querySelector('.hamburger');
-            if (mobileMenu && mobileMenu.classList.contains('active')) {
-                mobileMenu.classList.remove('active');
-                if (hamburger) {
-                    hamburger.style.transform = 'rotate(0deg)';
-                    hamburger.style.background = 'var(--text-primary)';
+    function validateForm(form) {
+        const formData = new FormData(form);
+        let isValid = true;
+        const errors = [];
+
+        // Validate each field
+        const validations = [
+            { name: 'name', type: 'name' },
+            { name: 'email', type: 'email' },
+            { name: 'company', type: 'company' },
+            { name: 'message', type: 'message' }
+        ];
+
+        validations.forEach(({ name, type }) => {
+            const field = form.querySelector(`[name="${name}"]`);
+            if (field) {
+                const value = formData.get(name);
+                const fieldErrors = validateField(field, value, type);
+                const fieldValid = showFieldError(field, fieldErrors);
+                
+                if (!fieldValid) {
+                    isValid = false;
+                    errors.push(...fieldErrors);
                 }
             }
+        });
+
+        return { isValid, errors };
+    }
+
+    // Check rate limiting
+    function checkRateLimit() {
+        const now = Date.now();
+        if (now - lastSubmissionTime < SUBMISSION_COOLDOWN) {
+            const remainingTime = Math.ceil((SUBMISSION_COOLDOWN - (now - lastSubmissionTime)) / 1000);
+            return {
+                allowed: false,
+                remainingTime
+            };
         }
-    });
+        return { allowed: true };
+    }
 
-    // Performance optimizations
-    function initPerformanceOptimizations() {
-        // Lazy load images if any are added dynamically
-        if ('IntersectionObserver' in window) {
-            const imageObserver = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        const img = entry.target;
-                        if (img.dataset.src) {
-                            img.src = img.dataset.src;
-                            img.removeAttribute('data-src');
-                            imageObserver.unobserve(img);
-                        }
-                    }
-                });
-            });
+    // Show notification to user
+    function showNotification(title, message, type = 'success') {
+        console.log(`📢 Notification [${type.toUpperCase()}]: ${title} - ${message}`);
+        
+        const notification = document.getElementById('form-notification');
+        if (!notification) {
+            console.warn('⚠️ Notification element not found');
+            return;
+        }
 
-            // Observe images with data-src attribute
-            document.querySelectorAll('img[data-src]').forEach(img => {
-                imageObserver.observe(img);
-            });
+        // Update content
+        const titleElement = notification.querySelector('.notification-title');
+        const messageElement = notification.querySelector('.notification-message');
+        
+        if (titleElement) titleElement.textContent = title;
+        if (messageElement) messageElement.textContent = message;
+
+        // Set type class
+        notification.className = `form-notification ${type}`;
+        
+        // Show notification
+        notification.style.display = 'block';
+        setTimeout(() => {
+            notification.classList.add('show');
+        }, 10);
+
+        // Auto-hide success notifications after 5 seconds
+        if (type === 'success') {
+            setTimeout(() => {
+                hideNotification();
+            }, 5000);
         }
     }
 
-    // Initialize performance optimizations
-    initPerformanceOptimizations();
-
-    // Add error handling
-    window.addEventListener('error', function(e) {
-        console.error('JavaScript error:', e.error);
-        // Gracefully handle errors without breaking the user experience
-    });
-
-    // Add resize handler for responsive adjustments
-    window.addEventListener('resize', debounce(function() {
-        // Handle any responsive adjustments here
-        const mobileMenu = document.getElementById('mobile-menu');
-        if (window.innerWidth > 768 && mobileMenu) {
-            mobileMenu.classList.remove('active');
+    // Hide notification
+    window.hideNotification = function() {
+        const notification = document.getElementById('form-notification');
+        if (notification) {
+            notification.classList.remove('show');
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 300);
         }
-    }, 250));
+    };
 
-    // Accessibility improvements
-    function improveAccessibility() {
-        // Add focus visible styles
-        const style = document.createElement('style');
-        style.textContent = `
-            .btn:focus-visible,
-            input:focus-visible,
-            select:focus-visible,
-            textarea:focus-visible {
-                outline: 2px solid var(--primary-500);
-                outline-offset: 2px;
+    // Initialize form handling with EmailJS
+    function initFormHandling() {
+        console.log('📋 Initializing form handling...');
+        
+        // Initialize EmailJS
+        const emailJSReady = initEmailJS();
+        
+        const contactForm = document.getElementById('contact-form');
+        
+        if (!contactForm) {
+            console.error('❌ Contact form not found');
+            return;
+        }
+
+        // Character counter for message field
+        const messageField = contactForm.querySelector('#message');
+        const messageCounter = document.getElementById('message-count');
+        
+        if (messageField && messageCounter) {
+            messageField.addEventListener('input', function() {
+                const count = this.value.length;
+                messageCounter.textContent = count;
+                
+                // Update color based on character count
+                if (count > 900) {
+                    messageCounter.style.color = 'var(--error)';
+                } else if (count > 800) {
+                    messageCounter.style.color = 'var(--warning)';
+                } else {
+                    messageCounter.style.color = 'var(--text-muted)';
+                }
+            });
+        }
+
+        // Real-time field validation
+        const formFields = contactForm.querySelectorAll('input, select, textarea');
+        formFields.forEach(field => {
+            field.addEventListener('blur', function() {
+                const fieldType = this.name === 'email' ? 'email' : 
+                                this.name === 'name' ? 'name' : 
+                                this.name === 'company' ? 'company' :
+                                this.name === 'message' ? 'message' : 'text';
+                
+                const errors = validateField(this, this.value, fieldType);
+                showFieldError(this, errors);
+            });
+
+            // Clear error on input
+            field.addEventListener('input', function() {
+                if (this.classList.contains('error')) {
+                    const errors = validateField(this, this.value, this.name);
+                    if (errors.length === 0) {
+                        showFieldError(this, []);
+                    }
+                }
+            });
+        });
+
+        // Form submission handler
+        contactForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            console.log('📤 Form submission started...');
+            
+            // Hide any existing notifications
+            hideNotification();
+
+            // Validate form
+            const validation = validateForm(this);
+            if (!validation.isValid) {
+                console.error('❌ Form validation failed:', validation.errors);
+                showNotification(
+                    'Validation Error', 
+                    'Please correct the errors in the form and try again.', 
+                    'error'
+                );
+                
+                // Focus on first error field
+                const firstErrorField = this.querySelector('.error');
+                if (firstErrorField) {
+                    firstErrorField.focus();
+                }
+                return;
+            }
+
+            // Check rate limiting
+            const rateCheck = checkRateLimit();
+            if (!rateCheck.allowed) {
+                console.warn(`⏰ Rate limit exceeded. ${rateCheck.remainingTime}s remaining`);
+                showNotification(
+                    'Please Wait', 
+                    `You can submit another message in ${rateCheck.remainingTime} seconds.`, 
+                    'warning'
+                );
+                return;
+            }
+
+            // Check if EmailJS is ready
+            if (!emailJSReady) {
+                console.error('❌ EmailJS not ready');
+                showNotification(
+                    'Service Unavailable', 
+                    'Email service is not available. Please try again later or contact us directly.', 
+                    'error'
+                );
+                return;
             }
             
-            .nav-link:focus-visible {
-                outline: 2px solid var(--primary-500);
-                outline-offset: 4px;
-                border-radius: 4px;
-            }
-        `;
-        document.head.appendChild(style);
+            // Show loading state
+            const submitButton = this.querySelector('button[type="submit"]');
+            const btnText = submitButton.querySelector('.btn-text');
+            const btnLoader = submitButton.querySelector('.btn-loader');
+            
+            btnText.style.display = 'none';
+            btnLoader.style.display = 'flex';
+            submitButton.disabled = true;
+            
+            // Get form data
+            const formData = new FormData(this);
+            const templateParams = {
+                from_name: formData.get('name') || '',
+                from_email: formData.get('email') || '',
+                company: formData.get('company') || 'Not provided',
+                service: formData.get('service') || 'Not specified',
+                message: formData.get('message') || 'No additional requirements',
+                to_email: 'contact@dgwebworks.com' // Ensure we have a recipient
+            };
+            
+            console.log('📧 Sending email with params:', {
+                ...templateParams,
+                from_email: '***@***.***' // Don't log actual email
+            });
+            
+            // Get configuration
+            const config = window.EMAILJS_CONFIG;
+            
+            // Send email using EmailJS
+            emailjs.send(config.serviceId, config.templateId, templateParams)
+                .then(function(response) {
+                    console.log('✅ Email sent successfully!', response.status, response.text);
+                    
+                    // Update rate limiting
+                    lastSubmissionTime = Date.now();
+                    
+                    // Show success message
+                    showNotification(
+                        'Message Sent Successfully!', 
+                        'Thank you for your interest! We will contact you within 2 hours during business hours.', 
+                        'success'
+                    );
+                    
+                    // Reset form
+                    contactForm.reset();
+                    
+                    // Reset character counter
+                    if (messageCounter) {
+                        messageCounter.textContent = '0';
+                        messageCounter.style.color = 'var(--text-muted)';
+                    }
+                    
+                    // Clear any existing errors
+                    const errorElements = contactForm.querySelectorAll('.form-error.show');
+                    const errorFields = contactForm.querySelectorAll('.error');
+                    
+                    errorElements.forEach(el => el.classList.remove('show'));
+                    errorFields.forEach(field => field.classList.remove('error'));
+                    
+                }, function(error) {
+                    console.error('❌ Failed to send email:', error);
+                    
+                    let errorMessage = 'There was an error sending your message. ';
+                    let errorTitle = 'Sending Failed';
+                    
+                    // Handle specific error types
+                    if (error.status === 400) {
+                        errorMessage += 'Please check your information and try again.';
+                    } else if (error.status === 401) {
+                        errorMessage += 'Service authentication failed. Please contact us directly.';
+                        errorTitle = 'Service Error';
+                    } else if (error.status === 403) {
+                        errorMessage += 'Service access denied. Please contact us directly.';
+                        errorTitle = 'Service Error';
+                    } else if (error.status === 404) {
+                        errorMessage += 'Email service not found. Please contact us directly.';
+                        errorTitle = 'Service Error';
+                    } else if (error.status >= 500) {
+                        errorMessage += 'Server error. Please try again in a few minutes.';
+                        errorTitle = 'Server Error';
+                    } else if (error.message && error.message.includes('network')) {
+                        errorMessage += 'Please check your internet connection and try again.';
+                        errorTitle = 'Connection Error';
+                    } else {
+                        errorMessage += 'Please try again or contact us directly at contact@dgwebworks.com';
+                    }
+                    
+                    showNotification(errorTitle, errorMessage, 'error');
+                })
+                .finally(function() {
+                    // Reset button state
+                    btnText.style.display = 'block';
+                    btnLoader.style.display = 'none';
+                    submitButton.disabled = false;
+                    
+                    console.log('📋 Form submission completed');
+                });
+        });
 
-        // Add skip to content functionality
-        const skipLink = document.createElement('a');
-        skipLink.href = '#main';
-        skipLink.textContent = 'Skip to main content';
-        skipLink.className = 'sr-only';
-        skipLink.style.cssText = `
-            position: absolute;
-            top: -40px;
-            left: 6px;
-            background: var(--primary-600);
-            color: white;
-            padding: 8px;
-            text-decoration: none;
-            border-radius: 4px;
-            z-index: 10000;
-            transition: top 0.3s;
-        `;
-        
-        skipLink.addEventListener('focus', function() {
-            this.style.top = '6px';
-        });
-        
-        skipLink.addEventListener('blur', function() {
-            this.style.top = '-40px';
-        });
-        
-        document.body.insertBefore(skipLink, document.body.firstChild);
+        console.log('✅ Form handling initialized successfully');
     }
-
-    // Initialize accessibility improvements
-    improveAccessibility();
 
 })();
