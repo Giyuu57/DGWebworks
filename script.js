@@ -1,1368 +1,640 @@
+// D&G Webworks Lead Generation Website - Interactive Script
 (function() {
-        var on = addEventListener,
-          off = removeEventListener,
-          $ = function(q) {
-            return document.querySelector(q)
-          },
-          $$ = function(q) {
-            return document.querySelectorAll(q)
-          },
-          $body = document.body,
-          $inner = $('.inner'),
-          client = (function() {
-            var o = {
-                browser: 'other',
-                browserVersion: 0,
-                os: 'other',
-                osVersion: 0,
-                mobile: false,
-                canUse: null,
-                flags: {
-                  lsdUnits: false,
-                },
-              },
-              ua = navigator.userAgent,
-              a, i;
-            a = [
-              ['firefox', /Firefox\/([0-9\.]+)/, null],
-              ['edge', /Edge\/([0-9\.]+)/, null],
-              ['safari', /Version\/([0-9\.]+).+Safari/, null],
-              ['chrome', /Chrome\/([0-9\.]+)/, null],
-              ['chrome', /CriOS\/([0-9\.]+)/, null],
-              ['ie', /Trident\/.+rv:([0-9]+)/, null],
-              ['safari', /iPhone OS ([0-9_]+)/, function(v) {
-                return v.replace('_', '.').replace('_', '');
-              }]
-            ];
-            for (i = 0; i < a.length; i++) {
-              if (ua.match(a[i][1])) {
-                o.browser = a[i][0];
-                o.browserVersion = parseFloat(a[i][2] ? (a[i][2])(RegExp.$1) : RegExp.$1);
-                break;
-              }
+    'use strict';
+
+    // Wait for DOM to be fully loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeWebsite();
+    });
+
+    function initializeWebsite() {
+        // Remove loading state
+        removeLoadingState();
+        
+        // Initialize scroll animations
+        initScrollAnimations();
+        
+        // Initialize navigation
+        initNavigation();
+        
+        // Initialize button interactions
+        initButtonInteractions();
+        
+        // Initialize smooth scrolling
+        initSmoothScrolling();
+        
+        // Initialize form handling
+        initFormHandling();
+        
+        // Initialize header scroll effects
+        initHeaderScrollEffects();
+    }
+
+    // Remove loading state and show content
+    function removeLoadingState() {
+        setTimeout(() => {
+            const loadingScreen = document.getElementById('loading-screen');
+            if (loadingScreen) {
+                loadingScreen.classList.add('hidden');
+                setTimeout(() => {
+                    loadingScreen.remove();
+                }, 500);
             }
-            a = [
-              ['ios', /([0-9_]+) like Mac OS X/, function(v) {
-                return v.replace('_', '.').replace('_', '');
-              }],
-              ['ios', /CPU like Mac OS X/, function(v) {
-                return 0
-              }],
-              ['ios', /iPad; CPU/, function(v) {
-                return 0
-              }],
-              ['android', /Android ([0-9\.]+)/, null],
-              ['mac', /Macintosh.+Mac OS X ([0-9_]+)/, function(v) {
-                return v.replace('_', '.').replace('_', '');
-              }],
-              ['windows', /Windows NT ([0-9\.]+)/, null],
-              ['undefined', /Undefined/, null]
-            ];
-            for (i = 0; i < a.length; i++) {
-              if (ua.match(a[i][1])) {
-                o.os = a[i][0];
-                o.osVersion = parseFloat(a[i][2] ? (a[i][2])(RegExp.$1) : RegExp.$1);
-                break;
-              }
-            }
-            if (o.os == 'mac' && ('ontouchstart' in window) && ((screen.width == 1024 && screen.height == 1366) || (screen.width == 834 && screen.height == 1112) || (screen.width == 810 && screen.height == 1080) || (screen.width == 768 && screen.height == 1024))) o.os = 'ios';
-            o.mobile = (o.os == 'android' || o.os == 'ios');
-            var _canUse = document.createElement('div');
-            o.canUse = function(property, value) {
-              var style;
-              style = _canUse.style;
-              if (!(property in style)) return false;
-              if (typeof value !== 'undefined') {
-                style[property] = value;
-                if (style[property] == '') return false;
-              }
-              return true;
-            };
-            o.flags.lsdUnits = o.canUse('width', '100dvw');
-            return o;
-          }()),
-          ready = {
-            list: [],
-            add: function(f) {
-              this.list.push(f);
-            },
-            run: function() {
-              this.list.forEach((f) => {
-                f();
-              });
-            },
-          },
-          trigger = function(t) {
-            dispatchEvent(new Event(t));
-          },
-          cssRules = function(selectorText) {
-            var ss = document.styleSheets,
-              a = [],
-              f = function(s) {
-                var r = s.cssRules,
-                  i;
-                for (i = 0; i < r.length; i++) {
-                  if (r[i] instanceof CSSMediaRule && matchMedia(r[i].conditionText).matches)
-                    (f)(r[i]);
-                  else if (r[i] instanceof CSSStyleRule && r[i].selectorText == selectorText) a.push(r[i]);
+        }, 1000);
+    }
+
+    // Initialize scroll-triggered animations
+    function initScrollAnimations() {
+        if (!('IntersectionObserver' in window)) return;
+
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                    observer.unobserve(entry.target);
                 }
-              },
-              x, i;
-            for (i = 0; i < ss.length; i++) f(ss[i]);
-            return a;
-          },
-          escapeHtml = function(s) {
-            if (s === '' || s === null || s === undefined) return '';
-            var a = {
-              '&': '&amp;',
-              '<': '&lt;',
-              '>': '&gt;',
-              '"': '&quot;',
-              "'": '&#39;',
-            };
-            s = s.replace(/[&<>"']/g, function(x) {
-              return a[x];
             });
-            return s;
-          },
-          thisHash = function() {
-            var h = location.hash ? location.hash.substring(1) : null,
-              a;
-            if (!h) return null;
-            if (h.match(/\?/)) {
-              a = h.split('?');
-              h = a[0];
-              history.replaceState(undefined, undefined, '#' + h);
-              window.location.search = a[1];
-            }
-            if (h.length > 0 && !h.match(/^[a-zA-Z]/)) h = 'x' + h;
-            if (typeof h == 'string') h = h.toLowerCase();
-            return h;
-          },
-          scrollToElement = function(e, style, duration) {
-            var y, cy, dy, start, easing, offset, f;
-            if (!e) y = 0;
-            else {
-              offset = (e.dataset.scrollOffset ? parseInt(e.dataset.scrollOffset) : 0) * parseFloat(getComputedStyle(document.documentElement).fontSize);
-              switch (e.dataset.scrollBehavior ? e.dataset.scrollBehavior : 'default') {
-                case 'default':
-                default:
-                  y = e.offsetTop + offset;
-                  break;
-                case 'center':
-                  if (e.offsetHeight < window.innerHeight) y = e.offsetTop - ((window.innerHeight - e.offsetHeight) / 2) + offset;
-                  else y = e.offsetTop - offset;
-                  break;
-                case 'previous':
-                  if (e.previousElementSibling) y = e.previousElementSibling.offsetTop + e.previousElementSibling.offsetHeight + offset;
-                  else y = e.offsetTop + offset;
-                  break;
-              }
-            }
-            if (!style) style = 'smooth';
-            if (!duration) duration = 750;
-            if (style == 'instant') {
-              window.scrollTo(0, y);
-              return;
-            }
-            start = Date.now();
-            cy = window.scrollY;
-            dy = y - cy;
-            switch (style) {
-              case 'linear':
-                easing = function(t) {
-                  return t
-                };
-                break;
-              case 'smooth':
-                easing = function(t) {
-                  return t < .5 ? 4 * t * t * t : (t - 1) * (2 * t - 2) * (2 * t - 2) + 1
-                };
-                break;
-            }
-            f = function() {
-              var t = Date.now() - start;
-              if (t >= duration) window.scroll(0, y);
-              else {
-                window.scroll(0, cy + (dy * easing(t / duration)));
-                requestAnimationFrame(f);
-              }
-            };
-            f();
-          },
-          scrollToTop = function() {
-            scrollToElement(null);
-          },
-          loadElements = function(parent) {
-            var a, e, x, i;
-            a = parent.querySelectorAll('iframe[data-src]:not([data-src=""])');
-            for (i = 0; i < a.length; i++) {
-              a[i].contentWindow.location.replace(a[i].dataset.src);
-              a[i].dataset.initialSrc = a[i].dataset.src;
-              a[i].dataset.src = '';
-            }
-            a = parent.querySelectorAll('video[autoplay]');
-            for (i = 0; i < a.length; i++) {
-              if (a[i].paused) a[i].play();
-            }
-            e = parent.querySelector('[data-autofocus="1"]');
-            x = e ? e.tagName : null;
-            switch (x) {
-              case 'FORM':
-                e = e.querySelector('.field input, .field select, .field textarea');
-                if (e) e.focus();
-                break;
-              default:
-                break;
-            }
-            a = parent.querySelectorAll('unloaded-script');
-            for (i = 0; i < a.length; i++) {
-              x = document.createElement('script');
-              x.setAttribute('data-loaded', '');
-              if (a[i].getAttribute('src')) x.setAttribute('src', a[i].getAttribute('src'));
-              if (a[i].textContent) x.textContent = a[i].textContent;
-              a[i].replaceWith(x);
-            }
-            x = new Event('loadelements');
-            a = parent.querySelectorAll('[data-unloaded]');
-            a.forEach((element) => {
-              element.removeAttribute('data-unloaded');
-              element.dispatchEvent(x);
-            });
-          },
-          unloadElements = function(parent) {
-            var a, e, x, i;
-            a = parent.querySelectorAll('iframe[data-src=""]');
-            for (i = 0; i < a.length; i++) {
-              if (a[i].dataset.srcUnload === '0') continue;
-              if ('initialSrc' in a[i].dataset) a[i].dataset.src = a[i].dataset.initialSrc;
-              else a[i].dataset.src = a[i].src;
-              a[i].contentWindow.location.replace('about:blank');
-            }
-            a = parent.querySelectorAll('video');
-            for (i = 0; i < a.length; i++) {
-              if (!a[i].paused) a[i].pause();
-            }
-            e = $(':focus');
-            if (e) e.blur();
-          };
-        window._scrollToTop = scrollToTop;
-        var thisUrl = function() {
-          return window.location.href.replace(window.location.search, '').replace(/#$/, '');
-        };
-        var getVar = function(name) {
-          var a = window.location.search.substring(1).split('&'),
-            b, k;
-          for (k in a) {
-            b = a[k].split('=');
-            if (b[0] == name) return b[1];
-          }
-          return null;
-        };
-        var errors = {
-          handle: function(handler) {
-            window.onerror = function(message, url, line, column, error) {
-              (handler)(error.message);
-              return true;
-            };
-          },
-          unhandle: function() {
-            window.onerror = null;
-          }
-        };
-        var loaderTimeout = setTimeout(function() {
-          $body.classList.add('with-loader');
-        }, 500);
-        var $loaderElement = document.createElement('div');
-        $loaderElement.id = 'loader';
-        $body.appendChild($loaderElement);
-        var loadHandler = function() {
-          setTimeout(function() {
-            clearTimeout(loaderTimeout);
-            $body.classList.remove('is-loading');
-            $body.classList.add('is-playing');
-            setTimeout(function() {
-              $body.classList.remove('with-loader');
-              $body.classList.remove('is-playing');
-              $body.classList.add('is-ready');
-              setTimeout(function() {
-                $body.removeChild($loaderElement);
-              }, 1000);
-            }, 1000);
-          }, 100);
-        };
-        on('load', loadHandler);
-        loadElements(document.body);
-        var style, sheet, rule;
-        style = document.createElement('style');
-        style.appendChild(document.createTextNode(''));
-        document.head.appendChild(style);
-        sheet = style.sheet;
-        if (client.mobile) {
-          (function() {
-            if (client.flags.lsdUnits) {
-              document.documentElement.style.setProperty('--viewport-height', '100svh');
-              document.documentElement.style.setProperty('--background-height', '100lvh');
+        }, observerOptions);
+
+        // Observe service cards, pricing cards, and benefit items
+        const animatedElements = document.querySelectorAll('.service-card, .pricing-card, .benefit, .contact-item');
+        animatedElements.forEach((element, index) => {
+            element.style.opacity = '0';
+            element.style.transform = 'translateY(30px)';
+            element.style.transition = `opacity 0.8s ease-out ${index * 0.1}s, transform 0.8s ease-out ${index * 0.1}s`;
+            observer.observe(element);
+        });
+    }
+
+    // Initialize navigation
+    function initNavigation() {
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        const hamburger = mobileMenuBtn.querySelector('.hamburger');
+
+        mobileMenuBtn.addEventListener('click', function() {
+            const isOpen = mobileMenu.classList.contains('active');
+            
+            if (isOpen) {
+                mobileMenu.classList.remove('active');
+                hamburger.style.transform = 'rotate(0deg)';
+                hamburger.style.background = 'var(--text-primary)';
             } else {
-              var f = function() {
-                document.documentElement.style.setProperty('--viewport-height', window.innerHeight + 'px');
-                document.documentElement.style.setProperty('--background-height', (window.innerHeight + 250) + 'px');
-              };
-              on('load', f);
-              on('orientationchange', function() {
-                setTimeout(function() {
-                  (f)();
-                }, 100);
-              });
+                mobileMenu.classList.add('active');
+                mobileMenu.style.display = 'flex';
+                hamburger.style.transform = 'rotate(90deg)';
+                hamburger.style.background = 'var(--primary-600)';
             }
-          })();
-        }
-        if (client.os == 'android') {
-          (function() {
-            sheet.insertRule('body::after { }', 0);
-            rule = sheet.cssRules[0];
-            var f = function() {
-              rule.style.cssText = 'height: ' + (Math.max(screen.width, screen.height)) + 'px';
-            };
-            on('load', f);
-            on('orientationchange', f);
-            on('touchmove', f);
-          })();
-          $body.classList.add('is-touch');
-        } else if (client.os == 'ios') {
-          if (client.osVersion <= 11)
-            (function() {
-              sheet.insertRule('body::after { }', 0);
-              rule = sheet.cssRules[0];
-              rule.style.cssText = '-webkit-transform: scale(1.0)';
-            })();
-          if (client.osVersion <= 11)
-            (function() {
-              sheet.insertRule('body.ios-focus-fix::before { }', 0);
-              rule = sheet.cssRules[0];
-              rule.style.cssText = 'height: calc(100% + 60px)';
-              on('focus', function(event) {
-                $body.classList.add('ios-focus-fix');
-              }, true);
-              on('blur', function(event) {
-                $body.classList.remove('ios-focus-fix');
-              }, true);
-            })();
-          $body.classList.add('is-touch');
-        }
-        (function() {
-          var breakpoints = {
-              small: '(max-width: 736px)',
-              medium: '(max-width: 980px)',
-            },
-            elements = $$('[data-reorder]');
-          elements.forEach(function(e) {
-            var desktop = [],
-              mobile = [],
-              state = false,
-              query, a, x, ce, f;
-            if ('reorderBreakpoint' in e.dataset && e.dataset.reorderBreakpoint in breakpoints) query = breakpoints[e.dataset.reorderBreakpoint];
-            else query = breakpoints.small;
-            for (ce of e.childNodes) {
-              if (ce.nodeType != 1) continue;
-              desktop.push(ce);
-            }
-            a = e.dataset.reorder.split(',');
-            for (x of a) mobile.push(desktop[parseInt(x)]);
-            f = function() {
-              var order = null,
-                ce;
-              if (window.matchMedia(query).matches) {
-                if (!state) {
-                  state = true;
-                  for (ce of mobile) e.appendChild(ce);
-                }
-              } else {
-                if (state) {
-                  state = false;
-                  for (ce of desktop) e.appendChild(ce);
-                }
-              }
-            };
-            on('resize', f);
-            on('orientationchange', f);
-            on('load', f);
-            on('fullscreenchange', f);
-          });
-        })();
-        var scrollEvents = {
-          items: [],
-          add: function(o) {
-            this.items.push({
-              element: o.element,
-              triggerElement: (('triggerElement' in o && o.triggerElement) ? o.triggerElement : o.element),
-              enter: ('enter' in o ? o.enter : null),
-              leave: ('leave' in o ? o.leave : null),
-              mode: ('mode' in o ? o.mode : 4),
-              threshold: ('threshold' in o ? o.threshold : 0.25),
-              offset: ('offset' in o ? o.offset : 0),
-              initialState: ('initialState' in o ? o.initialState : null),
-              state: false,
+        });
+
+        // Close mobile menu when clicking on a link
+        const mobileNavLinks = document.querySelectorAll('.mobile-nav-link');
+        mobileNavLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                mobileMenu.classList.remove('active');
+                hamburger.style.transform = 'rotate(0deg)';
+                hamburger.style.background = 'var(--text-primary)';
             });
-          },
-          handler: function() {
-            var height, top, bottom, scrollPad;
-            if (client.os == 'ios') {
-              height = document.documentElement.clientHeight;
-              top = document.body.scrollTop + window.scrollY;
-              bottom = top + height;
-              scrollPad = 125;
-            } else {
-              height = document.documentElement.clientHeight;
-              top = document.documentElement.scrollTop;
-              bottom = top + height;
-              scrollPad = 0;
+        });
+
+        // Close mobile menu on window resize
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 768) {
+                mobileMenu.classList.remove('active');
+                hamburger.style.transform = 'rotate(0deg)';
+                hamburger.style.background = 'var(--text-primary)';
             }
-            scrollEvents.items.forEach(function(item) {
-              var elementTop, elementBottom, viewportTop, viewportBottom, bcr, pad, state, a, b;
-              if (!item.enter && !item.leave) return true;
-              if (!item.triggerElement) return true;
-              if (item.triggerElement.offsetParent === null) {
-                if (item.state == true && item.leave) {
-                  item.state = false;
-                  (item.leave).apply(item.element);
-                  if (!item.enter) item.leave = null;
-                }
-                return true;
-              }
-              bcr = item.triggerElement.getBoundingClientRect();
-              elementTop = top + Math.floor(bcr.top);
-              elementBottom = elementTop + bcr.height;
-              if (item.initialState !== null) {
-                state = item.initialState;
-                item.initialState = null;
-              } else {
-                switch (item.mode) {
-                  case 1:
-                  default:
-                    state = (bottom > (elementTop - item.offset) && top < (elementBottom + item.offset));
-                    break;
-                  case 2:
-                    a = (top + (height * 0.5));
-                    state = (a > (elementTop - item.offset) && a < (elementBottom + item.offset));
-                    break;
-                  case 3:
-                    a = top + (height * (item.threshold));
-                    if (a - (height * 0.375) <= 0) a = 0;
-                    b = top + (height * (1 - item.threshold));
-                    if (b + (height * 0.375) >= document.body.scrollHeight - scrollPad) b = document.body.scrollHeight + scrollPad;
-                    state = (b > (elementTop - item.offset) && a < (elementBottom + item.offset));
-                    break;
-                  case 4:
-                    pad = height * item.threshold;
-                    viewportTop = (top + pad);
-                    viewportBottom = (bottom - pad);
-                    if (Math.floor(top) <= pad) viewportTop = top;
-                    if (Math.ceil(bottom) >= (document.body.scrollHeight - pad)) viewportBottom = bottom;
-                    if ((viewportBottom - viewportTop) >= (elementBottom - elementTop)) {
-                      state = ((elementTop >= viewportTop && elementBottom <= viewportBottom) || (elementTop >= viewportTop && elementTop <= viewportBottom) || (elementBottom >= viewportTop && elementBottom <= viewportBottom));
-                    } else state = ((viewportTop >= elementTop && viewportBottom <= elementBottom) || (elementTop >= viewportTop && elementTop <= viewportBottom) || (elementBottom >= viewportTop && elementBottom <= viewportBottom));
-                    break;
-                }
-              }
-              if (state != item.state) {
-                item.state = state;
-                if (item.state) {
-                  if (item.enter) {
-                    (item.enter).apply(item.element);
-                    if (!item.leave) item.enter = null;
-                  }
-                } else {
-                  if (item.leave) {
-                    (item.leave).apply(item.element);
-                    if (!item.enter) item.leave = null;
-                  }
-                }
-              }
+        });
+    }
+
+    // Initialize button interactions and hover effects
+    function initButtonInteractions() {
+        const buttons = document.querySelectorAll('.btn');
+
+        buttons.forEach(button => {
+            // Add ripple effect on click
+            button.addEventListener('click', function(e) {
+                createRippleEffect(e, this);
             });
-          },
-          init: function() {
-            on('load', this.handler);
-            on('resize', this.handler);
-            on('scroll', this.handler);
-            (this.handler)();
-          }
-        };
-        scrollEvents.init();
-        var onvisible = {
-          effects: {
-            'blur-in': {
-              type: 'transition',
-              transition: function(speed, delay) {
-                return 'opacity ' + speed + 's ease' + (delay ? ' ' + delay + 's' : '') + ', ' + 'filter ' + speed + 's ease' + (delay ? ' ' + delay + 's' : '');
-              },
-              rewind: function(intensity) {
-                this.style.opacity = 0;
-                this.style.filter = 'blur(' + (0.25 * intensity) + 'rem)';
-              },
-              play: function() {
-                this.style.opacity = 1;
-                this.style.filter = 'none';
-              },
-            },
-            'zoom-in': {
-              type: 'transition',
-              transition: function(speed, delay) {
-                return 'opacity ' + speed + 's ease' + (delay ? ' ' + delay + 's' : '') + ', ' + 'transform ' + speed + 's ease' + (delay ? ' ' + delay + 's' : '');
-              },
-              rewind: function(intensity, alt) {
-                this.style.opacity = 0;
-                this.style.transform = 'scale(' + (1 - ((alt ? 0.25 : 0.05) * intensity)) + ')';
-              },
-              play: function() {
-                this.style.opacity = 1;
-                this.style.transform = 'none';
-              },
-            },
-            'zoom-out': {
-              type: 'transition',
-              transition: function(speed, delay) {
-                return 'opacity ' + speed + 's ease' + (delay ? ' ' + delay + 's' : '') + ', ' + 'transform ' + speed + 's ease' + (delay ? ' ' + delay + 's' : '');
-              },
-              rewind: function(intensity, alt) {
-                this.style.opacity = 0;
-                this.style.transform = 'scale(' + (1 + ((alt ? 0.25 : 0.05) * intensity)) + ')';
-              },
-              play: function() {
-                this.style.opacity = 1;
-                this.style.transform = 'none';
-              },
-            },
-            'slide-left': {
-              type: 'transition',
-              transition: function(speed, delay) {
-                return 'transform ' + speed + 's ease' + (delay ? ' ' + delay + 's' : '');
-              },
-              rewind: function() {
-                this.style.transform = 'translateX(100vw)';
-              },
-              play: function() {
-                this.style.transform = 'none';
-              },
-            },
-            'slide-right': {
-              type: 'transition',
-              transition: function(speed, delay) {
-                return 'transform ' + speed + 's ease' + (delay ? ' ' + delay + 's' : '');
-              },
-              rewind: function() {
-                this.style.transform = 'translateX(-100vw)';
-              },
-              play: function() {
-                this.style.transform = 'none';
-              },
-            },
-            'flip-forward': {
-              type: 'transition',
-              transition: function(speed, delay) {
-                return 'opacity ' + speed + 's ease' + (delay ? ' ' + delay + 's' : '') + ', ' + 'transform ' + speed + 's ease' + (delay ? ' ' + delay + 's' : '');
-              },
-              rewind: function(intensity, alt) {
-                this.style.opacity = 0;
-                this.style.transformOrigin = '50% 50%';
-                this.style.transform = 'perspective(1000px) rotateX(' + ((alt ? 45 : 15) * intensity) + 'deg)';
-              },
-              play: function() {
-                this.style.opacity = 1;
-                this.style.transform = 'none';
-              },
-            },
-            'flip-backward': {
-              type: 'transition',
-              transition: function(speed, delay) {
-                return 'opacity ' + speed + 's ease' + (delay ? ' ' + delay + 's' : '') + ', ' + 'transform ' + speed + 's ease' + (delay ? ' ' + delay + 's' : '');
-              },
-              rewind: function(intensity, alt) {
-                this.style.opacity = 0;
-                this.style.transformOrigin = '50% 50%';
-                this.style.transform = 'perspective(1000px) rotateX(' + ((alt ? -45 : -15) * intensity) + 'deg)';
-              },
-              play: function() {
-                this.style.opacity = 1;
-                this.style.transform = 'none';
-              },
-            },
-            'flip-left': {
-              type: 'transition',
-              transition: function(speed, delay) {
-                return 'opacity ' + speed + 's ease' + (delay ? ' ' + delay + 's' : '') + ', ' + 'transform ' + speed + 's ease' + (delay ? ' ' + delay + 's' : '');
-              },
-              rewind: function(intensity, alt) {
-                this.style.opacity = 0;
-                this.style.transformOrigin = '50% 50%';
-                this.style.transform = 'perspective(1000px) rotateY(' + ((alt ? 45 : 15) * intensity) + 'deg)';
-              },
-              play: function() {
-                this.style.opacity = 1;
-                this.style.transform = 'none';
-              },
-            },
-            'flip-right': {
-              type: 'transition',
-              transition: function(speed, delay) {
-                return 'opacity ' + speed + 's ease' + (delay ? ' ' + delay + 's' : '') + ', ' + 'transform ' + speed + 's ease' + (delay ? ' ' + delay + 's' : '');
-              },
-              rewind: function(intensity, alt) {
-                this.style.opacity = 0;
-                this.style.transformOrigin = '50% 50%';
-                this.style.transform = 'perspective(1000px) rotateY(' + ((alt ? -45 : -15) * intensity) + 'deg)';
-              },
-              play: function() {
-                this.style.opacity = 1;
-                this.style.transform = 'none';
-              },
-            },
-            'tilt-left': {
-              type: 'transition',
-              transition: function(speed, delay) {
-                return 'opacity ' + speed + 's ease' + (delay ? ' ' + delay + 's' : '') + ', ' + 'transform ' + speed + 's ease' + (delay ? ' ' + delay + 's' : '');
-              },
-              rewind: function(intensity, alt) {
-                this.style.opacity = 0;
-                this.style.transform = 'rotate(' + ((alt ? 45 : 5) * intensity) + 'deg)';
-              },
-              play: function() {
-                this.style.opacity = 1;
-                this.style.transform = 'none';
-              },
-            },
-            'tilt-right': {
-              type: 'transition',
-              transition: function(speed, delay) {
-                return 'opacity ' + speed + 's ease' + (delay ? ' ' + delay + 's' : '') + ', ' + 'transform ' + speed + 's ease' + (delay ? ' ' + delay + 's' : '');
-              },
-              rewind: function(intensity, alt) {
-                this.style.opacity = 0;
-                this.style.transform = 'rotate(' + ((alt ? -45 : -5) * intensity) + 'deg)';
-              },
-              play: function() {
-                this.style.opacity = 1;
-                this.style.transform = 'none';
-              },
-            },
-            'fade-right': {
-              type: 'transition',
-              transition: function(speed, delay) {
-                return 'opacity ' + speed + 's ease' + (delay ? ' ' + delay + 's' : '') + ', ' + 'transform ' + speed + 's ease' + (delay ? ' ' + delay + 's' : '');
-              },
-              rewind: function(intensity) {
-                this.style.opacity = 0;
-                this.style.transform = 'translateX(' + (-1.5 * intensity) + 'rem)';
-              },
-              play: function() {
-                this.style.opacity = 1;
-                this.style.transform = 'none';
-              },
-            },
-            'fade-left': {
-              type: 'transition',
-              transition: function(speed, delay) {
-                return 'opacity ' + speed + 's ease' + (delay ? ' ' + delay + 's' : '') + ', ' + 'transform ' + speed + 's ease' + (delay ? ' ' + delay + 's' : '');
-              },
-              rewind: function(intensity) {
-                this.style.opacity = 0;
-                this.style.transform = 'translateX(' + (1.5 * intensity) + 'rem)';
-              },
-              play: function() {
-                this.style.opacity = 1;
-                this.style.transform = 'none';
-              },
-            },
-            'fade-down': {
-              type: 'transition',
-              transition: function(speed, delay) {
-                return 'opacity ' + speed + 's ease' + (delay ? ' ' + delay + 's' : '') + ', ' + 'transform ' + speed + 's ease' + (delay ? ' ' + delay + 's' : '');
-              },
-              rewind: function(intensity) {
-                this.style.opacity = 0;
-                this.style.transform = 'translateY(' + (-1.5 * intensity) + 'rem)';
-              },
-              play: function() {
-                this.style.opacity = 1;
-                this.style.transform = 'none';
-              },
-            },
-            'fade-up': {
-              type: 'transition',
-              transition: function(speed, delay) {
-                return 'opacity ' + speed + 's ease' + (delay ? ' ' + delay + 's' : '') + ', ' + 'transform ' + speed + 's ease' + (delay ? ' ' + delay + 's' : '');
-              },
-              rewind: function(intensity) {
-                this.style.opacity = 0;
-                this.style.transform = 'translateY(' + (1.5 * intensity) + 'rem)';
-              },
-              play: function() {
-                this.style.opacity = 1;
-                this.style.transform = 'none';
-              },
-            },
-            'fade-in': {
-              type: 'transition',
-              transition: function(speed, delay) {
-                return 'opacity ' + speed + 's ease' + (delay ? ' ' + delay + 's' : '');
-              },
-              rewind: function() {
-                this.style.opacity = 0;
-              },
-              play: function() {
-                this.style.opacity = 1;
-              },
-            },
-            'fade-in-background': {
-              type: 'manual',
-              rewind: function() {
-                this.style.removeProperty('--onvisible-delay');
-                this.style.removeProperty('--onvisible-background-color');
-              },
-              play: function(speed, delay) {
-                this.style.setProperty('--onvisible-speed', speed + 's');
-                if (delay) this.style.setProperty('--onvisible-delay', delay + 's');
-                this.style.setProperty('--onvisible-background-color', 'rgba(0,0,0,0.001)');
-              },
-            },
-            'zoom-in-image': {
-              type: 'transition',
-              target: 'img',
-              transition: function(speed, delay) {
-                return 'transform ' + speed + 's ease' + (delay ? ' ' + delay + 's' : '');
-              },
-              rewind: function() {
-                this.style.transform = 'scale(1)';
-              },
-              play: function(intensity) {
-                this.style.transform = 'scale(' + (1 + (0.1 * intensity)) + ')';
-              },
-            },
-            'zoom-out-image': {
-              type: 'transition',
-              target: 'img',
-              transition: function(speed, delay) {
-                return 'transform ' + speed + 's ease' + (delay ? ' ' + delay + 's' : '');
-              },
-              rewind: function(intensity) {
-                this.style.transform = 'scale(' + (1 + (0.1 * intensity)) + ')';
-              },
-              play: function() {
-                this.style.transform = 'none';
-              },
-            },
-            'focus-image': {
-              type: 'transition',
-              target: 'img',
-              transition: function(speed, delay) {
-                return 'transform ' + speed + 's ease' + (delay ? ' ' + delay + 's' : '') + ', ' + 'filter ' + speed + 's ease' + (delay ? ' ' + delay + 's' : '');
-              },
-              rewind: function(intensity) {
-                this.style.transform = 'scale(' + (1 + (0.05 * intensity)) + ')';
-                this.style.filter = 'blur(' + (0.25 * intensity) + 'rem)';
-              },
-              play: function(intensity) {
-                this.style.transform = 'none';
-                this.style.filter = 'none';
-              },
-            },
-            'wipe-up': {
-              type: 'animate',
-              keyframes: function(intensity) {
-                return [{
-                  maskSize: '100% 0%',
-                  maskImage: 'linear-gradient(90deg, black 100%, transparent 100%)',
-                }, {
-                  maskSize: '110% 110%',
-                  maskImage: 'linear-gradient(90deg, black 100%, transparent 100%)',
-                }, ];
-              },
-              options: function(speed) {
-                return {
-                  duration: speed,
-                  iterations: 1,
-                  easing: 'ease',
-                };
-              },
-              rewind: function() {
-                this.style.opacity = 0;
-                this.style.maskComposite = 'exclude';
-                this.style.maskRepeat = 'no-repeat';
-                this.style.maskPosition = '0% 100%';
-              },
-              play: function() {
-                this.style.opacity = 1;
-              },
-            },
-            'wipe-down': {
-              type: 'animate',
-              keyframes: function(intensity) {
-                return [{
-                  maskSize: '100% 0%',
-                  maskImage: 'linear-gradient(90deg, black 100%, transparent 100%)',
-                }, {
-                  maskSize: '110% 110%',
-                  maskImage: 'linear-gradient(90deg, black 100%, transparent 100%)',
-                }, ];
-              },
-              options: function(speed) {
-                return {
-                  duration: speed,
-                  iterations: 1,
-                  easing: 'ease',
-                };
-              },
-              rewind: function() {
-                this.style.opacity = 0;
-                this.style.maskComposite = 'exclude';
-                this.style.maskRepeat = 'no-repeat';
-                this.style.maskPosition = '0% 0%';
-              },
-              play: function() {
-                this.style.opacity = 1;
-              },
-            },
-            'wipe-left': {
-              type: 'animate',
-              keyframes: function(intensity) {
-                return [{
-                  maskSize: '0% 100%',
-                  maskImage: 'linear-gradient(90deg, black 100%, transparent 100%)',
-                }, {
-                  maskSize: '110% 110%',
-                  maskImage: 'linear-gradient(90deg, black 100%, transparent 100%)',
-                }, ];
-              },
-              options: function(speed) {
-                return {
-                  duration: speed,
-                  iterations: 1,
-                  easing: 'ease',
-                };
-              },
-              rewind: function() {
-                this.style.opacity = 0;
-                this.style.maskComposite = 'exclude';
-                this.style.maskRepeat = 'no-repeat';
-                this.style.maskPosition = '100% 0%';
-              },
-              play: function() {
-                this.style.opacity = 1;
-              },
-            },
-            'wipe-right': {
-              type: 'animate',
-              keyframes: function(intensity) {
-                return [{
-                  maskSize: '0% 100%',
-                  maskImage: 'linear-gradient(90deg, black 100%, transparent 100%)',
-                }, {
-                  maskSize: '110% 110%',
-                  maskImage: 'linear-gradient(90deg, black 100%, transparent 100%)',
-                }, ];
-              },
-              options: function(speed) {
-                return {
-                  duration: speed,
-                  iterations: 1,
-                  easing: 'ease',
-                };
-              },
-              rewind: function() {
-                this.style.opacity = 0;
-                this.style.maskComposite = 'exclude';
-                this.style.maskRepeat = 'no-repeat';
-                this.style.maskPosition = '0% 0%';
-              },
-              play: function() {
-                this.style.opacity = 1;
-              },
-            },
-            'wipe-diagonal': {
-              type: 'animate',
-              keyframes: function(intensity) {
-                return [{
-                  maskSize: '0% 0%',
-                  maskImage: 'linear-gradient(45deg, black 50%, transparent 50%)',
-                }, {
-                  maskSize: '220% 220%',
-                  maskImage: 'linear-gradient(45deg, black 50%, transparent 50%)',
-                }, ];
-              },
-              options: function(speed) {
-                return {
-                  duration: speed,
-                  iterations: 1,
-                  easing: 'ease',
-                };
-              },
-              rewind: function() {
-                this.style.opacity = 0;
-                this.style.maskComposite = 'exclude';
-                this.style.maskRepeat = 'no-repeat';
-                this.style.maskPosition = '0% 100%';
-              },
-              play: function() {
-                this.style.opacity = 1;
-              },
-            },
-            'wipe-reverse-diagonal': {
-              type: 'animate',
-              keyframes: function(intensity) {
-                return [{
-                  maskSize: '0% 0%',
-                  maskImage: 'linear-gradient(135deg, transparent 50%, black 50%)',
-                }, {
-                  maskSize: '220% 220%',
-                  maskImage: 'linear-gradient(135deg, transparent 50%, black 50%)',
-                }, ];
-              },
-              options: function(speed) {
-                return {
-                  duration: speed,
-                  iterations: 1,
-                  easing: 'ease',
-                };
-              },
-              rewind: function() {
-                this.style.opacity = 0;
-                this.style.maskComposite = 'exclude';
-                this.style.maskRepeat = 'no-repeat';
-                this.style.maskPosition = '100% 100%';
-              },
-              play: function() {
-                this.style.opacity = 1;
-              },
-            },
-            'pop-in': {
-              type: 'animate',
-              keyframes: function(intensity) {
-                let diff = (intensity + 1) * 0.025;
-                return [{
-                  opacity: 0,
-                  transform: 'scale(' + (1 - diff) + ')',
-                }, {
-                  opacity: 1,
-                  transform: 'scale(' + (1 + diff) + ')',
-                }, {
-                  opacity: 1,
-                  transform: 'scale(' + (1 - (diff * 0.25)) + ')',
-                  offset: 0.9,
-                }, {
-                  opacity: 1,
-                  transform: 'scale(1)',
-                }];
-              },
-              options: function(speed) {
-                return {
-                  duration: speed,
-                  iterations: 1,
-                };
-              },
-              rewind: function() {
-                this.style.opacity = 0;
-              },
-              play: function() {
-                this.style.opacity = 1;
-              },
-            },
-            'bounce-up': {
-              type: 'animate',
-              keyframes: function(intensity) {
-                let diff = (intensity + 1) * 0.075;
-                return [{
-                  opacity: 0,
-                  transform: 'translateY(' + diff + 'rem)',
-                }, {
-                  opacity: 1,
-                  transform: 'translateY(' + (-1 * diff) + 'rem)',
-                }, {
-                  opacity: 1,
-                  transform: 'translateY(' + (diff * 0.25) + 'rem)',
-                  offset: 0.9,
-                }, {
-                  opacity: 1,
-                  transform: 'translateY(0)',
-                }];
-              },
-              options: function(speed) {
-                return {
-                  duration: speed,
-                  iterations: 1,
-                };
-              },
-              rewind: function() {
-                this.style.opacity = 0;
-              },
-              play: function() {
-                this.style.opacity = 1;
-              },
-            },
-            'bounce-down': {
-              type: 'animate',
-              keyframes: function(intensity) {
-                let diff = (intensity + 1) * 0.075;
-                return [{
-                  opacity: 0,
-                  transform: 'translateY(' + (-1 * diff) + 'rem)',
-                }, {
-                  opacity: 1,
-                  transform: 'translateY(' + diff + 'rem)',
-                }, {
-                  opacity: 1,
-                  transform: 'translateY(' + (-1 * (diff * 0.25)) + 'rem)',
-                  offset: 0.9,
-                }, {
-                  opacity: 1,
-                  transform: 'translateY(0)',
-                }];
-              },
-              options: function(speed) {
-                return {
-                  duration: speed,
-                  iterations: 1,
-                };
-              },
-              rewind: function() {
-                this.style.opacity = 0;
-              },
-              play: function() {
-                this.style.opacity = 1;
-              },
-            },
-            'bounce-left': {
-              type: 'animate',
-              keyframes: function(intensity) {
-                let diff = (intensity + 1) * 0.075;
-                return [{
-                  opacity: 0,
-                  transform: 'translateX(' + diff + 'rem)',
-                }, {
-                  opacity: 1,
-                  transform: 'translateX(' + (-1 * diff) + 'rem)',
-                }, {
-                  opacity: 1,
-                  transform: 'translateX(' + (diff * 0.25) + 'rem)',
-                  offset: 0.9,
-                }, {
-                  opacity: 1,
-                  transform: 'translateX(0)',
-                }];
-              },
-              options: function(speed) {
-                return {
-                  duration: speed,
-                  iterations: 1,
-                };
-              },
-              rewind: function() {
-                this.style.opacity = 0;
-              },
-              play: function() {
-                this.style.opacity = 1;
-              },
-            },
-            'bounce-right': {
-              type: 'animate',
-              keyframes: function(intensity) {
-                let diff = (intensity + 1) * 0.075;
-                return [{
-                  opacity: 0,
-                  transform: 'translateX(' + (-1 * diff) + 'rem)',
-                }, {
-                  opacity: 1,
-                  transform: 'translateX(' + diff + 'rem)',
-                }, {
-                  opacity: 1,
-                  transform: 'translateX(' + (-1 * (diff * 0.25)) + 'rem)',
-                  offset: 0.9,
-                }, {
-                  opacity: 1,
-                  transform: 'translateX(0)',
-                }];
-              },
-              options: function(speed) {
-                return {
-                  duration: speed,
-                  iterations: 1,
-                };
-              },
-              rewind: function() {
-                this.style.opacity = 0;
-              },
-              play: function() {
-                this.style.opacity = 1;
-              },
-            },
-          },
-          regex: new RegExp('([^\\s]+)', 'g'),
-          add: function(selector, settings) {
-            var _this = this,
-              style = settings.style in this.effects ? settings.style : 'fade',
-              speed = parseInt('speed' in settings ? settings.speed : 0),
-              intensity = parseInt('intensity' in settings ? settings.intensity : 5),
-              delay = parseInt('delay' in settings ? settings.delay : 0),
-              replay = 'replay' in settings ? settings.replay : false,
-              stagger = 'stagger' in settings ? (parseInt(settings.stagger) >= 0 ? parseInt(settings.stagger) : false) : false,
-              staggerOrder = 'staggerOrder' in settings ? settings.staggerOrder : 'default',
-              staggerSelector = 'staggerSelector' in settings ? settings.staggerSelector : null,
-              threshold = parseInt('threshold' in settings ? settings.threshold : 3),
-              state = 'state' in settings ? settings.state : null,
-              effect = this.effects[style],
-              enter, leave, scrollEventThreshold;
-            if (window.CARRD_DISABLE_ANIMATION === true) {
-              if (style == 'fade-in-background') $$(selector).forEach(function(e) {
-                e.style.setProperty('--onvisible-background-color', 'rgba(0,0,0,0.001)');
-              });
-              return;
-            }
-            switch (threshold) {
-              case 1:
-                scrollEventThreshold = 0;
-                break;
-              case 2:
-                scrollEventThreshold = 0.125;
-                break;
-              default:
-              case 3:
-                scrollEventThreshold = 0.25;
-                break;
-              case 4:
-                scrollEventThreshold = 0.375;
-                break;
-              case 5:
-                scrollEventThreshold = 0.475;
-                break;
-            }
-            switch (effect.type) {
-              default:
-              case 'transition':
-                intensity = ((intensity / 10) * 1.75) + 0.25;
-                enter = function(children, staggerDelay = 0) {
-                  var _this = this,
-                    transitionOrig;
-                  if (effect.target) _this = this.querySelector(effect.target);
-                  transitionOrig = _this.style.transition;
-                  _this.style.setProperty('backface-visibility', 'hidden');
-                  _this.style.transition = effect.transition.apply(_this, [speed / 1000, (delay + staggerDelay) / 1000]);
-                  effect.play.apply(_this, [intensity, !!children]);
-                  setTimeout(function() {
-                    _this.style.removeProperty('backface-visibility');
-                    _this.style.transition = transitionOrig;
-                  }, (speed + delay + staggerDelay) * 2);
-                };
-                leave = function(children) {
-                  var _this = this,
-                    transitionOrig;
-                  if (effect.target) _this = this.querySelector(effect.target);
-                  transitionOrig = _this.style.transition;
-                  _this.style.setProperty('backface-visibility', 'hidden');
-                  _this.style.transition = effect.transition.apply(_this, [speed / 1000]);
-                  effect.rewind.apply(_this, [intensity, !!children]);
-                  setTimeout(function() {
-                    _this.style.removeProperty('backface-visibility');
-                    _this.style.transition = transitionOrig;
-                  }, speed * 2);
-                };
-                break;
-              case 'animate':
-                enter = function(children, staggerDelay = 0) {
-                  var _this = this,
-                    transitionOrig;
-                  if (effect.target) _this = this.querySelector(effect.target);
-                  setTimeout(() => {
-                    effect.play.apply(_this, []);
-                    _this.animate(effect.keyframes.apply(_this, [intensity]), effect.options.apply(_this, [speed, delay]));
-                  }, delay + staggerDelay);
-                };
-                leave = function(children) {
-                  var _this = this,
-                    transitionOrig;
-                  if (effect.target) _this = this.querySelector(effect.target);
-                  let a = _this.animate(effect.keyframes.apply(_this, [intensity]), effect.options.apply(_this, [speed, delay]));
-                  a.reverse();
-                  a.addEventListener('finish', () => {
-                    effect.rewind.apply(_this, []);
-                  });
-                };
-                break;
-              case 'manual':
-                enter = function(children, staggerDelay = 0) {
-                  var _this = this,
-                    transitionOrig;
-                  if (effect.target) _this = this.querySelector(effect.target);
-                  effect.play.apply(_this, [speed / 1000, (delay + staggerDelay) / 1000, intensity]);
-                };
-                leave = function(children) {
-                  var _this = this,
-                    transitionOrig;
-                  if (effect.target) _this = this.querySelector(effect.target);
-                  effect.rewind.apply(_this, [intensity, !!children]);
-                };
-                break;
-            }
-            $$(selector).forEach(function(e) {
-              var children, targetElement, triggerElement;
-              if (stagger !== false && staggerSelector == ':scope > *') _this.expandTextNodes(e);
-              children = (stagger !== false && staggerSelector) ? e.querySelectorAll(staggerSelector) : null;
-              if (effect.target) targetElement = e.querySelector(effect.target);
-              else targetElement = e;
-              if (children) children.forEach(function(targetElement) {
-                effect.rewind.apply(targetElement, [intensity, true]);
-              });
-              else effect.rewind.apply(targetElement, [intensity]);
-              triggerElement = e;
-              if (e.parentNode) {
-                if (e.parentNode.dataset.onvisibleTrigger) triggerElement = e.parentNode;
-                else if (e.parentNode.parentNode) {
-                  if (e.parentNode.parentNode.dataset.onvisibleTrigger) triggerElement = e.parentNode.parentNode;
+
+            // Add focus management
+            button.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    this.click();
                 }
-              }
-              scrollEvents.add({
-                element: e,
-                triggerElement: triggerElement,
-                initialState: state,
-                threshold: scrollEventThreshold,
-                enter: children ? function() {
-                  var staggerDelay = 0,
-                    childHandler = function(e) {
-                      enter.apply(e, [children, staggerDelay]);
-                      staggerDelay += stagger;
-                    },
-                    a;
-                  if (staggerOrder == 'default') {
-                    children.forEach(childHandler);
-                  } else {
-                    a = Array.from(children);
-                    switch (staggerOrder) {
-                      case 'reverse':
-                        a.reverse();
-                        break;
-                      case 'random':
-                        a.sort(function() {
-                          return Math.random() - 0.5;
-                        });
-                        break;
+            });
+        });
+
+        // Add hover effects to cards
+        const cards = document.querySelectorAll('.service-card, .pricing-card');
+        cards.forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-8px)';
+            });
+
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(-4px)';
+            });
+        });
+    }
+
+    // Create ripple effect for buttons
+    function createRippleEffect(event, element) {
+        const ripple = document.createElement('span');
+        const rect = element.getBoundingClientRect();
+        const size = Math.max(rect.width, rect.height);
+        const x = event.clientX - rect.left - size / 2;
+        const y = event.clientY - rect.top - size / 2;
+
+        ripple.style.cssText = `
+            position: absolute;
+            width: ${size}px;
+            height: ${size}px;
+            left: ${x}px;
+            top: ${y}px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            transform: scale(0);
+            animation: ripple 0.6s ease-out;
+            pointer-events: none;
+            z-index: 1;
+        `;
+
+        // Add ripple keyframes if not already added
+        if (!document.querySelector('#ripple-styles')) {
+            const style = document.createElement('style');
+            style.id = 'ripple-styles';
+            style.textContent = `
+                @keyframes ripple {
+                    to {
+                        transform: scale(2);
+                        opacity: 0;
                     }
-                    a.forEach(childHandler);
-                  }
-                } : enter,
-                leave: (replay ? (children ? function() {
-                  children.forEach(function(e) {
-                    leave.apply(e, [children]);
-                  });
-                } : leave) : null),
-              });
-            });
-          },
-          expandTextNodes: function(e) {
-            var s, i, w, x;
-            for (i = 0; i < e.childNodes.length; i++) {
-              x = e.childNodes[i];
-              if (x.nodeType != Node.TEXT_NODE) continue;
-              s = x.nodeValue;
-              s = s.replace(this.regex, function(x, a) {
-                return ' < text - node > ' + escapeHtml(a) + ' < /text-node>';
-              });
-              w = document.createElement('text-node');
-              w.innerHTML = s;
-              x.replaceWith(w);
-              while (w.childNodes.length > 0) {
-                w.parentNode.insertBefore(w.childNodes[0], w);
-              }
-              w.parentNode.removeChild(w);
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        element.style.position = 'relative';
+        element.style.overflow = 'hidden';
+        element.appendChild(ripple);
+
+        // Remove ripple after animation
+        setTimeout(() => {
+            if (ripple.parentNode) {
+                ripple.parentNode.removeChild(ripple);
             }
-          },
+        }, 600);
+    }
+
+    // Initialize smooth scrolling for anchor links
+    function initSmoothScrolling() {
+        const links = document.querySelectorAll('a[href^="#"]');
+        
+        links.forEach(link => {
+            link.addEventListener('click', function(e) {
+                const href = this.getAttribute('href');
+                if (href === '#') return;
+                
+                const target = document.querySelector(href);
+                if (target) {
+                    e.preventDefault();
+                    scrollToSection(href.substring(1));
+                }
+            });
+        });
+    }
+
+    // Global scroll to section function
+    window.scrollToSection = function(sectionId) {
+        const element = document.getElementById(sectionId);
+        if (element) {
+            const headerOffset = 80;
+            const elementPosition = element.getBoundingClientRect().top;
+            const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+            window.scrollTo({
+                top: offsetPosition,
+                behavior: 'smooth'
+            });
+
+            // Close mobile menu if open
+            const mobileMenu = document.getElementById('mobile-menu');
+            const hamburger = document.querySelector('.hamburger');
+            if (mobileMenu && mobileMenu.classList.contains('active')) {
+                mobileMenu.classList.remove('active');
+                if (hamburger) {
+                    hamburger.style.transform = 'rotate(0deg)';
+                    hamburger.style.background = 'var(--text-primary)';
+                }
+            }
+        }
+    };
+
+    // Initialize EmailJS
+    function initEmailJS() {
+        // Check if emailjs is loaded
+        if (typeof emailjs === 'undefined') {
+            console.error('EmailJS library not loaded. Please check your internet connection.');
+            return false;
+        }
+        
+        // Check if config is loaded
+        if (typeof window.EMAILJS_CONFIG === 'undefined') {
+            console.error('EmailJS config not loaded. Please check emailjs-config.js file.');
+            return false;
+        }
+        
+        // Initialize EmailJS with your public key
+        try {
+            emailjs.init(window.EMAILJS_CONFIG.publicKey);
+            console.log('EmailJS initialized successfully');
+            return true;
+        } catch (error) {
+            console.error('Failed to initialize EmailJS:', error);
+            return false;
+        }
+    }
+
+    // Initialize form handling with EmailJS
+    function initFormHandling() {
+        // Initialize EmailJS
+        const emailJSReady = initEmailJS();
+        
+        const contactForm = document.getElementById('contact-form');
+        
+        if (contactForm) {
+            contactForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Check if EmailJS is ready
+                if (!emailJSReady) {
+                    showNotification('Setup Required', 'EmailJS is not properly configured. Please check your keys in script.js', 'error');
+                    return;
+                }
+                
+                // Show loading state
+                const submitButton = this.querySelector('button[type="submit"]');
+                const originalText = submitButton.textContent;
+                submitButton.textContent = 'Sending...';
+                submitButton.disabled = true;
+                
+                // Get form data
+                const formData = new FormData(this);
+                const templateParams = {
+                    from_name: formData.get('name'),
+                    from_email: formData.get('email'), 
+                    company: formData.get('company') || 'Not provided',
+                    service: formData.get('service') || 'Not specified',
+                    message: formData.get('message') || 'No additional requirements'
+                };
+                
+                console.log('Sending email with params:', templateParams);
+                
+                // Get configuration
+                const config = window.EMAILJS_CONFIG;
+                
+                // Check for placeholder values
+                if (config.serviceId === 'YOUR_SERVICE_ID' || config.templateId === 'YOUR_TEMPLATE_ID' || config.publicKey === 'YOUR_PUBLIC_KEY') {
+                    console.error('EmailJS keys not updated! Please update emailjs-config.js with your actual keys.');
+                    showNotification('Setup Required', 'Please update your EmailJS keys in emailjs-config.js file', 'error');
+                    submitButton.textContent = originalText;
+                    submitButton.disabled = false;
+                    return;
+                }
+                
+                // Send email using EmailJS
+                emailjs.send(config.serviceId, config.templateId, templateParams)
+                    .then(function(response) {
+                        console.log('Email sent successfully!', response.status, response.text);
+                        
+                        // Show success message
+                        showNotification('Message Sent!', 'Thank you for your interest! We will contact you within 2 hours.', 'success');
+                        
+                        // Reset form
+                        contactForm.reset();
+                        
+                    }, function(error) {
+                        console.error('Failed to send email:', error);
+                        
+                        let errorMessage = 'There was an error sending your message. ';
+                        
+                        if (error.status === 400) {
+                            errorMessage += 'Please check your EmailJS template parameters.';
+                        } else if (error.status === 401) {
+                            errorMessage += 'Please check your EmailJS public key.';
+                        } else if (error.status === 404) {
+                            errorMessage += 'Please check your service ID and template ID.';
+                        } else {
+                            errorMessage += 'Please try again or contact us directly.';
+                        }
+                        
+                        showNotification('Send Failed', errorMessage, 'error');
+                    })
+                    .finally(function() {
+                        // Reset button state
+                        submitButton.textContent = originalText;
+                        submitButton.disabled = false;
+                    });
+            });
+
+            // Add real-time validation
+            const inputs = contactForm.querySelectorAll('input, select, textarea');
+            inputs.forEach(input => {
+                input.addEventListener('blur', function() {
+                    validateField(this);
+                });
+
+                input.addEventListener('input', function() {
+                    clearFieldError(this);
+                });
+            });
+        }
+    }
+
+    // Field validation
+    function validateField(field) {
+        const value = field.value.trim();
+        let isValid = true;
+        let message = '';
+
+        // Clear previous errors
+        clearFieldError(field);
+
+        // Required field validation
+        if (field.hasAttribute('required') && !value) {
+            isValid = false;
+            message = 'This field is required';
+        }
+
+        // Email validation
+        if (field.type === 'email' && value) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(value)) {
+                isValid = false;
+                message = 'Please enter a valid email address';
+            }
+        }
+
+        if (!isValid) {
+            showFieldError(field, message);
+        }
+
+        return isValid;
+    }
+
+    function showFieldError(field, message) {
+        const formGroup = field.closest('.form-group');
+        if (formGroup) {
+            field.style.borderColor = '#ef4444';
+            
+            let errorElement = formGroup.querySelector('.field-error');
+            if (!errorElement) {
+                errorElement = document.createElement('span');
+                errorElement.className = 'field-error';
+                errorElement.style.cssText = 'color: #ef4444; font-size: 14px; margin-top: 4px; display: block;';
+                formGroup.appendChild(errorElement);
+            }
+            errorElement.textContent = message;
+        }
+    }
+
+    function clearFieldError(field) {
+        const formGroup = field.closest('.form-group');
+        if (formGroup) {
+            field.style.borderColor = '';
+            const errorElement = formGroup.querySelector('.field-error');
+            if (errorElement) {
+                errorElement.remove();
+            }
+        }
+    }
+
+    // Initialize header scroll effects
+    function initHeaderScrollEffects() {
+        const header = document.getElementById('header');
+        let lastScrollY = window.pageYOffset;
+
+        function updateHeader() {
+            const currentScrollY = window.pageYOffset;
+            
+            if (currentScrollY > 100) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+
+            lastScrollY = currentScrollY;
+        }
+
+        window.addEventListener('scroll', debounce(updateHeader, 10), { passive: true });
+    }
+
+    // Notification system
+    function showNotification(title, message, type = 'info') {
+        // Remove existing notification
+        const existingNotification = document.querySelector('.notification');
+        if (existingNotification) {
+            existingNotification.remove();
+        }
+
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 16px 20px;
+            box-shadow: var(--shadow-lg);
+            z-index: 10000;
+            max-width: 400px;
+            transform: translateX(100%);
+            transition: transform 0.3s ease-out;
+        `;
+
+        if (type === 'success') {
+            notification.style.borderLeftColor = 'var(--primary-500)';
+            notification.style.borderLeftWidth = '4px';
+        } else if (type === 'error') {
+            notification.style.borderLeftColor = '#ef4444';
+            notification.style.borderLeftWidth = '4px';
+        }
+
+        notification.innerHTML = `
+            <div style="display: flex; align-items: flex-start; gap: 12px;">
+                <div style="flex: 1;">
+                    <h4 style="margin: 0 0 4px 0; font-weight: 600; color: var(--text-primary);">${title}</h4>
+                    <p style="margin: 0; color: var(--text-secondary); font-size: 14px;">${message}</p>
+                </div>
+                <button onclick="this.parentElement.parentElement.remove()" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 18px; line-height: 1;">×</button>
+            </div>
+        `;
+
+        document.body.appendChild(notification);
+
+        // Animate in
+        setTimeout(() => {
+            notification.style.transform = 'translateX(0)';
+        }, 10);
+
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    if (notification.parentElement) {
+                        notification.remove();
+                    }
+                }, 300);
+            }
+        }, 5000);
+    }
+
+    // Utility function: Debounce
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func.apply(this, args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
         };
-        onvisible.add('.image.style1', {
-          style: 'fade-left',
-          speed: 1000,
-          intensity: 5,
-          threshold: 5,
-          delay: 0,
-          replay: false
+    }
+
+    // Add keyboard navigation support
+    document.addEventListener('keydown', function(e) {
+        // Add keyboard shortcuts
+        if (e.ctrlKey || e.metaKey) {
+            switch (e.key) {
+                case 'k':
+                    e.preventDefault();
+                    // Focus on first contact button
+                    const contactButton = document.querySelector('.btn-primary');
+                    if (contactButton) contactButton.focus();
+                    break;
+            }
+        }
+
+        // Escape key to close mobile menu
+        if (e.key === 'Escape') {
+            const mobileMenu = document.getElementById('mobile-menu');
+            const hamburger = document.querySelector('.hamburger');
+            if (mobileMenu && mobileMenu.classList.contains('active')) {
+                mobileMenu.classList.remove('active');
+                if (hamburger) {
+                    hamburger.style.transform = 'rotate(0deg)';
+                    hamburger.style.background = 'var(--text-primary)';
+                }
+            }
+        }
+    });
+
+    // Performance optimizations
+    function initPerformanceOptimizations() {
+        // Lazy load images if any are added dynamically
+        if ('IntersectionObserver' in window) {
+            const imageObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const img = entry.target;
+                        if (img.dataset.src) {
+                            img.src = img.dataset.src;
+                            img.removeAttribute('data-src');
+                            imageObserver.unobserve(img);
+                        }
+                    }
+                });
+            });
+
+            // Observe images with data-src attribute
+            document.querySelectorAll('img[data-src]').forEach(img => {
+                imageObserver.observe(img);
+            });
+        }
+    }
+
+    // Initialize performance optimizations
+    initPerformanceOptimizations();
+
+    // Add error handling
+    window.addEventListener('error', function(e) {
+        console.error('JavaScript error:', e.error);
+        // Gracefully handle errors without breaking the user experience
+    });
+
+    // Add resize handler for responsive adjustments
+    window.addEventListener('resize', debounce(function() {
+        // Handle any responsive adjustments here
+        const mobileMenu = document.getElementById('mobile-menu');
+        if (window.innerWidth > 768 && mobileMenu) {
+            mobileMenu.classList.remove('active');
+        }
+    }, 250));
+
+    // Accessibility improvements
+    function improveAccessibility() {
+        // Add focus visible styles
+        const style = document.createElement('style');
+        style.textContent = `
+            .btn:focus-visible,
+            input:focus-visible,
+            select:focus-visible,
+            textarea:focus-visible {
+                outline: 2px solid var(--primary-500);
+                outline-offset: 2px;
+            }
+            
+            .nav-link:focus-visible {
+                outline: 2px solid var(--primary-500);
+                outline-offset: 4px;
+                border-radius: 4px;
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Add skip to content functionality
+        const skipLink = document.createElement('a');
+        skipLink.href = '#main';
+        skipLink.textContent = 'Skip to main content';
+        skipLink.className = 'sr-only';
+        skipLink.style.cssText = `
+            position: absolute;
+            top: -40px;
+            left: 6px;
+            background: var(--primary-600);
+            color: white;
+            padding: 8px;
+            text-decoration: none;
+            border-radius: 4px;
+            z-index: 10000;
+            transition: top 0.3s;
+        `;
+        
+        skipLink.addEventListener('focus', function() {
+            this.style.top = '6px';
         });
-        onvisible.add('h1.style1, h2.style1, h3.style1, p.style1', {
-          style: 'fade-up',
-          speed: 1000,
-          intensity: 2,
-          threshold: 5,
-          delay: 250,
-          replay: false
+        
+        skipLink.addEventListener('blur', function() {
+            this.style.top = '-40px';
         });
-        onvisible.add('h1.style2, h2.style2, h3.style2, p.style2', {
-          style: 'fade-up',
-          speed: 1000,
-          intensity: 3,
-          threshold: 5,
-          delay: 250,
-          replay: false
-        });
-        onvisible.add('#text11', {
-          style: 'fade-up',
-          speed: 1000,
-          intensity: 2,
-          threshold: 5,
-          delay: 250,
-          replay: false
-        });
-        onvisible.add('.icons.style1', {
-          style: 'fade-up',
-          speed: 1000,
-          intensity: 1,
-          threshold: 3,
-          delay: 500,
-          stagger: 125,
-          staggerSelector: ':scope > li',
-          replay: false
-        });
-        onvisible.add('#text05', {
-          style: 'fade-up',
-          speed: 1000,
-          intensity: 2,
-          threshold: 5,
-          delay: 250,
-          replay: false
-        });
-        onvisible.add('.container.style3', {
-          style: 'fade-in-background',
-          speed: 1000,
-          intensity: 5,
-          threshold: 5,
-          delay: 0,
-          replay: false
-        });
-        onvisible.add('#text09', {
-          style: 'fade-up',
-          speed: 1000,
-          intensity: 3,
-          threshold: 5,
-          delay: 250,
-          replay: false
-        });
-        onvisible.add('#text06', {
-          style: 'fade-up',
-          speed: 1000,
-          intensity: 3,
-          threshold: 5,
-          delay: 250,
-          replay: false
-        });
-        onvisible.add('#text08', {
-          style: 'fade-up',
-          speed: 1000,
-          intensity: 3,
-          threshold: 5,
-          delay: 250,
-          replay: false
-        });
-        onvisible.add('#text03', {
-          style: 'fade-up',
-          speed: 1000,
-          intensity: 3,
-          threshold: 5,
-          delay: 250,
-          replay: false
-        });
-        ready.run();
-      })();
+        
+        document.body.insertBefore(skipLink, document.body.firstChild);
+    }
+
+    // Initialize accessibility improvements
+    improveAccessibility();
+
+})();
